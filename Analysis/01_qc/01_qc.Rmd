@@ -14,30 +14,57 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 ## Requisitos
 
-Este análisis asume que existe un entorno conda llamado `nanoplot`
-con las siguientes herramientas:
+envs/01_qc.yml
 
 - NanoPlot
+- Filtlong
 ### Set the seed 
 ```{r set-seed}
-# any number can be chosen
 set.seed(3980)
 ```
 ### Timing of Script
 ```{r rmd-start}
-# What time did we start running this script? 
 start_time <- Sys.time()
 start_time
 ```
+## Load Packages
+```{r load-packages}
+pacman::p_load(htmltools, install = FALSE)
+```
+
 # Goals of file:
 
 1. Cargar secuencias crudas.
 2. Analizar la calidad con NanoPlot
+3. Correr qc con filtlong 
+4. comprobar calidad con nanoplot
 
-#NanoPlot run
-```{bash NanoPlot-call}
-NANO_ENV="$HOME/miniconda3/envs/nanoplot/bin"
-$NANO_ENV/NanoPlot --version
-$NANO_ENV/NanoPlot --fastq Data/prueba.fastq.gz --outdir Analysis_01_qc
+### Nanoplot 1
+conda activate nanoplot
+NanoPlot --version
+NanoPlot 1.44.1
+NanoPlot --fastq Data/prueba.fastq.gz --outdir Analysis/01_qc/nanoplot
+
+### Resultados primer nanoplot
+```{r NanoPlot-resultados}
+htmltools::tags$iframe(
+  src = "nanoplot_pre_qc/Yield_ByLength.html",
+  width = "100%",
+  height = "600px",
+  style = "border:none;"
+)
 ```
+
+## Filtlong 
+conda deactivate
+conda activate filtlong
+filtlong --version
+Filtlong v0.2.1
+filtlong --min_length 1000 --min_mean_q 7 prueba.fastq.gz | gzip > prueba.L1000.Q7.fastq.gz
+
+### Nanoplot 2
+NanoPlot 1.44.1
+NanoPlot --fastq Data/prueba.L1000.Q7.fastq.gz --outdir Analysis/01_qc/nanoplotpostqc
+
+### resultados nanoplot 2
 

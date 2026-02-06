@@ -11,7 +11,7 @@
 
 <meta name="author" content="Roger Calvas" />
 
-<meta name="date" content="2026-02-04" />
+<meta name="date" content="2026-02-06" />
 
 <title>01_qc</title>
 
@@ -352,39 +352,67 @@ display: none;
 
 <h1 class="title toc-ignore">01_qc</h1>
 <h4 class="author">Roger Calvas</h4>
-<h4 class="date">2026-02-04</h4>
+<h4 class="date">2026-02-06</h4>
 
 </div>
 
 
 <div id="requisitos" class="section level2">
 <h2>Requisitos</h2>
-<p>Este análisis asume que existe un entorno conda llamado
-<code>nanoplot</code> con las siguientes herramientas:</p>
+<p>envs/01_qc.yml</p>
 <ul>
-<li>NanoPlot ### Set the seed</li>
+<li>NanoPlot</li>
+<li>Filtlong ### Set the seed</li>
 </ul>
-<pre class="r"><code># any number can be chosen
-set.seed(3980)</code></pre>
+<pre class="r"><code>set.seed(3980)</code></pre>
 <div id="timing-of-script" class="section level3">
 <h3>Timing of Script</h3>
-<pre class="r"><code># What time did we start running this script? 
-start_time &lt;- Sys.time()
+<pre class="r"><code>start_time &lt;- Sys.time()
 start_time</code></pre>
-<pre><code>## [1] &quot;2026-02-04 12:29:28 -05&quot;</code></pre>
+<pre><code>## [1] &quot;2026-02-06 15:02:47 -05&quot;</code></pre>
 </div>
+</div>
+<div id="load-packages" class="section level2">
+<h2>Load Packages</h2>
+<pre class="r"><code>pacman::p_load(htmltools, install = FALSE)</code></pre>
 </div>
 <div id="goals-of-file" class="section level1">
 <h1>Goals of file:</h1>
 <ol style="list-style-type: decimal">
 <li>Cargar secuencias crudas.</li>
 <li>Analizar la calidad con NanoPlot</li>
+<li>Correr qc con filtlong</li>
+<li>comprobar calidad con nanoplot</li>
 </ol>
-<p>#NanoPlot run</p>
-<pre class="bash"><code>NANO_ENV=&quot;$HOME/miniconda3/envs/nanoplot/bin&quot;
-$NANO_ENV/NanoPlot --version
-$NANO_ENV/NanoPlot --fastq Data/prueba.fastq.gz --outdir Analysis_01_qc</code></pre>
-<pre><code>## NanoPlot 1.44.1</code></pre>
+<div id="nanoplot-1" class="section level3">
+<h3>Nanoplot 1</h3>
+<p>conda activate nanoplot NanoPlot –version NanoPlot 1.44.1 NanoPlot
+–fastq Data/prueba.fastq.gz –outdir Analysis/01_qc/nanoplot</p>
+</div>
+<div id="resultados-primer-nanoplot" class="section level3">
+<h3>Resultados primer nanoplot</h3>
+<pre class="r"><code>htmltools::tags$iframe(
+  src = &quot;nanoplot_pre_qc/Yield_ByLength.html&quot;,
+  width = &quot;100%&quot;,
+  height = &quot;600px&quot;,
+  style = &quot;border:none;&quot;
+)</code></pre>
+<iframe role="img" src="nanoplot_pre_qc/Yield_ByLength.html" width="100%" height="600px" style="border:none;"></iframe>
+</div>
+<div id="filtlong" class="section level2">
+<h2>Filtlong</h2>
+<p>conda deactivate conda activate filtlong filtlong –version Filtlong
+v0.2.1 filtlong –min_length 1000 –min_mean_q 7 prueba.fastq.gz | gzip
+&gt; prueba.L1000.Q7.fastq.gz</p>
+<div id="nanoplot-2" class="section level3">
+<h3>Nanoplot 2</h3>
+<p>NanoPlot 1.44.1 NanoPlot –fastq Data/prueba.L1000.Q7.fastq.gz –outdir
+Analysis/01_qc/nanoplotpostqc</p>
+</div>
+<div id="resultados-nanoplot-2" class="section level3">
+<h3>resultados nanoplot 2</h3>
+</div>
+</div>
 </div>
 
 
