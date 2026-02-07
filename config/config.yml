@@ -1,0 +1,3 @@
+threads: 8
+min_length: 1000
+min_mean: 7
