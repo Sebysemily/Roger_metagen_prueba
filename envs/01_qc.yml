@@ -1,0 +1,10 @@
+name: qc_nanopore
+channels:
+ - conda-forge
+ - bioconda
+ - defaults
+dependencies:
+  -  python=3.10
+  - nanoplot
+  - filtlong
+

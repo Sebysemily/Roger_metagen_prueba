@@ -2,4 +2,7 @@ Data/*
 Data/**
 Data/***
 
+results/outputs/*
+results/outputs/**
+results/outputs/***
 .Rproj.user
