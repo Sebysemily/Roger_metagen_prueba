@@ -1,23 +1,21 @@
 # Inputs:
-# - Raw sequencing data in Data/Raw_seq/..fastq.gzip
+# - Raw sequencing data in Data/Raw_seq/..fastq.gz
 # Outputs:
-# - Filtered fastq in Data/fitlon/...fastq.gzip
+# - Filtered fastq in Data/fitlon/...fastq.gz
  
- rule nanopot_pre:
+ rule nanoplot_pre:
     input:
-	fastq = "data/{id}.fast.gzip"
+	"data/raw_seq/{sample}.fast.gz"
     output:
-	stats="results/outputs/nanoplot_pre_qc/NanoStats.txt",
-	Yield_By_Length_png="results/outputs/nanoplot_pre_qc/Yield_By_Length.png",
-	Yield_By_Length_html="results/outputs/nanoplot_pre_qc/Yield_By_Length.html",
-	W_H_Length_png="results/outputs/nanoplot_pre_qc/WeightedHistogramReadlength.png",
-	W_H_Length_html="results/outputs/nanoplot_pre_qc/WeightedHistogramReadle.html",
-	L_vs_Q_png="results/outptus/nanoplot_pre_qc/LengthvsQualityScatterPlot_kde.png",
-	L_vs_Q_html="results/outptus/nanoplot_pre_qc/LengthvsQualityScatterPlot.html"
+	pre_stats="results/outputs/qc/pre/{sample}/NanoStats.txt",
+	pre_ybl="results/outputs/qc/pre/{sample}/Yield_By_Length.html",
+	pre_lvq="results/outputs/qc/pre/{sample}/LengthvsQualityScatterPlot_kde.html"
     conda: 
 	"envs/01_qc/nanoplot.yml" 
+    threads: config["threads"]
     shell: 
 	"""
-	Nanoplot --fastq {input} -o results/outputs/nanoplot_pre_qc/{wildcards.sample} 
+	mkdir -p results/qc/pre/{wildcards.sample}
+	NanoPlot --fastq {input} -o results/outputs/qc/pre/{wildcards.sample} --threads {threads} 
 	"""
 	

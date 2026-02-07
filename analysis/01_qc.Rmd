@@ -22,21 +22,6 @@ envs/01_qc.yml
 - NanoPlot
 - Filtlong
 
-## Inputs:
- - Raw sequencing data in Data/Raw_seq/..fastq.gzip
-
-## Outputs:
- - Filtered fastq in Data/fitlon/...fastq.gzip
- 
-### Set the seed 
-```{r set-seed}
-set.seed(3980)
-```
-### Timing of Script
-```{r rmd-start}
-start_time <- Sys.time()
-start_time
-```
 ## Load Packages
 ```{r load-packages}
 library(htmltools)
