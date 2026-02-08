@@ -1,3 +1,9 @@
-threads: 8
-min_length: 1000
-min_mean: 7
+qc:
+  threads: 8
+  min_length: 1000
+  min_mean_q: 7
+paths:
+  raw_dir: "data/raw_seq"
+  filtered_dir: "data/filtered"
+  qc_dir: "results/outputs/qc"
+
