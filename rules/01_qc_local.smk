@@ -25,7 +25,7 @@ rule nanoplot_pre:
 	pre_ybl="{QC_DIR}/pre/{sample}/Yield_By_Length.png",
 	pre_lvq="{QC_DIR}/pre/{sample}/LengthvsQualityScatterPlot_kde.png"
     conda: 
-	"envs/01_qc.yml"
+	"nanoplot"
     threads: THREADS 
     shell: 
 	"""
@@ -38,7 +38,9 @@ rule fitlong:
     input:
 	fastq=lambda wc: f"{RAW_DIR}/{wc.sample}.fast.gz"
     output:
-	fastq_filt=lambda wc: f"{FILT_DIR}/{wc.sample}_post_qc.fastq.gz"	
+	fastq_filt=lambda wc: f"{FILT_DIR}/{wc.sample}_post_qc.fastq.gz"
+    conda:
+	"filtlong"	
     shell:
 	"""
 	mkdir -p {FILT_DIR}
@@ -52,7 +54,7 @@ rule nanoplot_post:
         post_ybl="{QC_DIR}/post/{sample}/Yield_By_Length.png",
         post_lvq="{QC_DIR}/post/{sample}/LengthvsQualityScatterPlot_kde.png"
     conda:
-        "envs/01_qc.yml"
+        "nanoplot"
     threads: THREADS
     shell:
         """
@@ -80,7 +82,7 @@ rule render_qc_report:
 	Rscript --vanilla -e \
 	'rmarkdown::render(
 	 "analysis/01_qc.Rmd",
-	 output_file = "{output.html}",
+	 output_file = {output.html}",
 	params = list(
 	
 	pre_stats = "{input.pre_stats}",
