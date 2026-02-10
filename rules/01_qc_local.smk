@@ -19,11 +19,11 @@ rule all:
 # -------------- QC PRE ------------------------------------------------------------------------------
 rule nanoplot_pre:
     input:
-        fastq=lambda wc: f"{RAW_DIR}/{wc.sample}.fast.gz"
+        fastq="{RAW_DIR}/{wildcards.sample}/.fast.gz"
     output:
-        pre_stats="{QC_DIR}/pre/{sample}/NanoStats.txt",
-        pre_ybl="{QC_DIR}/pre/{sample}/Yield_By_Length.png",
-        pre_lvq="{QC_DIR}/pre/{sample}/LengthvsQualityScatterPlot_kde.png"
+        pre_stats="{QC_DIR}/pre/{wildcards.sample}/NanoStats.txt",
+        pre_ybl="{QC_DIR}/pre/{wildcards.sample}/Yield_By_Length.png",
+        pre_lvq="{QC_DIR}/pre/{wildcards.sample}/LengthvsQualityScatterPlot_kde.png"
     conda: 
         "nanoplot"
     threads: THREADS 
@@ -35,9 +35,9 @@ rule nanoplot_pre:
 # ------------ FILTRADO --------------------------------------------------------------------------
 rule fitlong:
     input:
-        fastq=lambda wc: f"{RAW_DIR}/{wc.sample}.fast.gz"
+        fastq="{RAW_DIR}/{{wildcards.sample}}.fast.gz"
     output:
-        fastq_filt=lambda wc: f"{FILT_DIR}/{wc.sample}_post_qc.fastq.gz"
+        fastq_filt="{FILT_DIR}/{wildcards.sample}_post_qc.fastq.gz"
     conda:
         "filtlong"	
     shell:
@@ -48,11 +48,11 @@ rule fitlong:
 # ------------- QC POST ----------------------------------------------------------------
 rule nanoplot_post:
     input:
-        fastq=lambda wc: f"{FILT_DIR}/{wc.sample}_post_qc.fast.gz"
+        fastq="{FILT_DIR}/{wildcards.sample}_post_qc.fast.gz"
     output:
-        post_stats="{QC_DIR}/post/{sample}/NanoStats.txt",
-        post_ybl="{QC_DIR}/post/{sample}/Yield_By_Length.png",
-        post_lvq="{QC_DIR}/post/{sample}/LengthvsQualityScatterPlot_kde.png"
+        post_stats="{QC_DIR}/post/{wildcards.sample}/NanoStats.txt",
+        post_ybl="{QC_DIR}/post/{wildcards.sample}/Yield_By_Length.png",
+        post_lvq="{QC_DIR}/post/{wildcards.sample}/LengthvsQualityScatterPlot_kde.png"
     conda:
         "nanoplot"
     threads: THREADS
@@ -69,7 +69,7 @@ rule render_qc_report:
         pre_ybl=expand(f"{QC_DIR}/pre/{{sample}}/Yield_By_Length.png", sample=SAMPLES),
         post_ybl=expand(f"{QC_DIR}/post/{{sample}}/Yield_By_Length.png", sample=SAMPLES),
         pre_lvq=expand(f"{QC_DIR}/pre/{{sample}}/LengthvsQualityScatterPlot_kde.png", sample=SAMPLES),
-        post_lvq=expand(f"{QC_DIR}/post/{{sample}}/LengthvsQualityScatterPlot_kde.png", sample=SAMPLES) 
+        post_lvq=expand(f"{QC_DIR}/post/{{sample}}/LengthvsQualityScatterPlot_kde.png", sample=SAMPLES)
     output:
         html="results/results_docs/01_qc.html"
     shell:

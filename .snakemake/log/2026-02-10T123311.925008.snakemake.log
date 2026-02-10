@@ -1,0 +1,4 @@
+host: HPZ6
+Building DAG of jobs...
+MissingRuleException:
+No rule to produce pre_stats (if you use input functions make sure that they don't raise unexpected exceptions).
