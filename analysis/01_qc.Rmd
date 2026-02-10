@@ -71,19 +71,40 @@ library(htmltools)
 
 # Resultados pre_qc
 ```{r NanoPlot-resultados-pre-qc}
-cat(readLines("Analysis/01_qc/nanoplot_pre_qc/NanoStats.txt"), sep ="\n")
-htmltools::includeHTML("Analysis/01_qc/nanoplot_pre_qc/Yield_By_Length.html")
-htmltools::includeHTML("Analysis/01_qc/nanoplot_pre_qc/WeightedHistogramReadlength.html")
-htmltools::includeHTML("Analysis/01_qc/nanoplot_pre_qc/LengthvsQualityScatterPlot_kde.html")
-```
-## Dado los resultados se decidio min calidad de 7 y min largo de 1000
+for (i in seq_along(samples)) {
+  s <- samples[i]
 
+  # Título de muestra
+  cat("\n\n## Muestra: ", s, "\n\n")
 
-# resultados post_qc
-```{r NanoPlot-resultados-post-qc}
-cat(readLines("Analysis/01_qc/nanoplot_post_qc/NanoStats.txt"), sep ="\n")
-htmltools::includeHTML("Analysis/01_qc/nanoplot_post_qc/Yield_By_Length.html")
-htmltools::includeHTML("Analysis/01_qc/nanoplot_post_qc/WeightedHistogramReadlength.html")
-htmltools::includeHTML("Analysis/01_qc/nanoplot_post_qc/LengthvsQualityScatterPlot_kde.html")
+  # Resultados Pre-QC
+  cat("### Resultados Pre-QC\n")
+  cat("#### NanoStats (Pre):\n")
+  cat("```text\n")
+  cat(readLines(pre_stats[i]), sep = "\n")
+  cat("\n```\n")
+
+  cat("#### Yield by Length (Pre):\n")
+  cat(iframe_html(pre_ybl[i], height = 650), "\n\n")
+
+  cat("#### Length vs Quality (Pre):\n")
+  cat(iframe_html(pre_lvq[i], height = 650), "\n\n")
+
+  # Resultados Post-QC
+  cat("### Resultados Post-QC\n")
+  cat("#### NanoStats (Post):\n")
+  cat("```text\n")
+  cat(readLines(post_stats[i]), sep = "\n")
+  cat("\n```\n")
+
+  cat("#### Yield by Length (Post):\n")
+  cat(iframe_html(post_ybl[i], height = 650), "\n\n")
+
+  cat("#### Length vs Quality (Post):\n")
+  cat(iframe_html(post_lvq[i], height = 650), "\n\n")
+
+  cat("\n\n---\n")
+}
 ```
+
 ### Resultados post_qc bla bla 

@@ -1,12 +1,12 @@
 
-import pandsas as pd
+import pandas as pd
 
 configfile: "config/config.yml"
 
-SAMPLES = pd.read_csv("config/samples.tsv, sep="\t")["sample"].tolist()
+SAMPLES = pd.read_csv("config/samples.tsv", sep="\t")["sample"].tolist()
 
-RAW_DIR = config["paths"]["raw_dir] 
-FILT_DIR = config["paths"]["filtered_dir]
+RAW_DIR = config["paths"]["raw_dir"] 
+FILT_DIR = config["paths"]["filtered_dir"]
 QC_DIR = config["paths"]["qc_dir"]
 
 MIN_LEN = config["qc"]["min_length"]
@@ -30,8 +30,7 @@ rule nanoplot_pre:
     shell: 
 	"""
 	mkdir -p {QC_DIR}/pre/{wildcards.sample}
-	NanoPlot --fastq {input.fastq} -o {QC_DIR}/qc/pre/{wildcards.sample}\
- 	--plots dot --format png --dpi 200 -t {threads} 
+	NanoPlot --fastq {input.fastq} -o {QC_DIR}/qc/pre/{wildcards.sample} --plots dot --format png --dpi 200 -t {threads} 
 	"""
 # ------------ FILTRADO --------------------------------------------------------------------------
 rule fitlong:
@@ -59,18 +58,15 @@ rule nanoplot_post:
     shell:
         """
         mkdir -p {QC_DIR}/post/{wildcards.sample}
-        NanoPlot --fastq {input.fastq} -o {QC_DIR}/qc/post/{wildcards.sample} \
-	--plots dot --format png --dpi 200 -t {threads}
+        NanoPlot --fastq {input.fastq} -o {QC_DIR}/qc/post/{wildcards.sample} --plots dot --format png --dpi 200 -t {threads}
         """
 # ---------------- REPORTE --------------------------------------------------------------------------
 rule render_qc_report:
     input:
 	pre_stats=expand(f"{QC_DIR}/pre/{{sample}}/NanoStats.txt", sample=SAMPLES),
 	post_stats=expand(f"{QC_DIR}/post/{{sample}}/NanoStats.txt", sample=SAMPLES),
-	
 	pre_ybl=expand(f"{QC_DIR}/pre/{{sample}}/Yield_By_Length.png", sample=SAMPLES),
         post_ybl=expand(f"{QC_DIR}/post/{{sample}}/Yield_By_Length.png", sample=SAMPLES),
-	
 	pre_lvq=expand(f"{QC_DIR}/pre/{{sample}}/LengthvsQualityScatterPlot_kde.png", sample=SAMPLES),
 	post_lvq=expand(f"{QC_DIR}/post/{{sample}}/LengthvsQualityScatterPlot_kde.png", sample=SAMPLES) 
 
@@ -79,20 +75,18 @@ rule render_qc_report:
     shell:
 	"""
 	mkdir -p results/results_docs
-	Rscript --vanilla -e \
-	'rmarkdown::render(
+	Rscript --vanilla -e 'rmarkdown::render(
 	 "analysis/01_qc.Rmd",
-	 output_file = {output.html}",
-	params = list(
-	
-	pre_stats = "{input.pre_stats}",
-	post_stats = "{input.post_stats}",
-	pre_ybl = "{input.pre_ybl}",
-	post_ybl = "{input.post_ybl}",
-	pre_lvq = "{input.pre_lvq}",
-	post_lvq = "{input.post_lvq}"
-	  )
-         )
-        '
+	 output_file = "results/results_docs/01_qc.html",
+	 params = list(
+	 pre_stats = "{input.pre_stats}",
+	 post_stats = "{input.post_stats}",
+	 pre_ybl = "{input.pre_ybl}",
+	 post_ybl = "{input.post_ybl}",
+	 pre_lvq = "{input.pre_lvq}",
+	 post_lvq = "{input.post_lvq}"
+	 )
+        )'
+        
         """ 
 
