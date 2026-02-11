@@ -1,6 +1,9 @@
 data/*
 data/**
 data/***
+.snakemake/*
+.snakemake/**
+.snakemake/**
 
 results/outputs/*
 results/outputs/**

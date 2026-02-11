@@ -6,4 +6,4 @@ paths:
   raw_dir: "data/raw_seq"
   filtered_dir: "data/filtered"
   qc_dir: "results/outputs/qc"
-
+  html_dir: "results/results_docs"

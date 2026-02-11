@@ -9,20 +9,15 @@ output:
 params:
   pre_stats: ""
   post_stats: ""
-  pre_ybl: ""
-  post_ybl: ""
-  pre_lvq: ""
-  post_lvq: ""
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
 split_paths <- function(x) {
   x <- trimws(x)
   if (is.null(x) || is.na(x) || x == "") return(character(0))
-  strsplit(x, " +")[[1]]  # uno o más espacios
+  strsplit(x, " +")[[1]]
 }
 
 get_sample <- function(path) {
@@ -30,81 +25,106 @@ get_sample <- function(path) {
   parts[length(parts) - 1]
 }
 
-iframe_html <- function(path, height = 550) {
-  sprintf('<iframe src="%s" width="100%%" height="%d" style="border:none;"></iframe>',
-          path, height)
+img_tag <- function(filepath, alt_text = "QC Plot", width = "100%") {
+  if (is.na(filepath) || !file.exists(filepath)) {
+    return(sprintf('<p style="color: gray;">%s not available</p>', alt_text))
+  }
+  
+  # The HTML will be in results/results_docs/
+  # Images are in results/outputs/qc/
+  # So relative path should be: ../outputs/qc/...
+  
+  # Extract the path after "results/"
+  if (grepl("^results/", filepath)) {
+    # Remove "results/" prefix
+    rel_part <- sub("^results/", "", filepath)
+    # Prepend "../" to go up from results_docs to results
+    rel_path <- paste0("../", rel_part)
+  } else {
+    rel_path <- filepath
+  }
+  
+  # Create the proper HTML img tag
+  html <- sprintf('<img src="%s" alt="%s" style="width: %s; max-width: 800px; border: 1px solid #ddd;">',
+                  rel_path, alt_text, width)
+  
+  return(html)
 }
 
+# Process parameters
 pre_stats  <- split_paths(params$pre_stats)
 post_stats <- split_paths(params$post_stats)
-pre_ybl    <- split_paths(params$pre_ybl)
-post_ybl   <- split_paths(params$post_ybl)
-pre_lvq    <- split_paths(params$pre_lvq)
-post_lvq   <- split_paths(params$post_lvq)
-
-# Alinea todo por sample (por si acaso)
-samples <- vapply(pre_stats, get_sample, FUN.VALUE = character(1))
-ord <- order(samples)
-
-pre_stats  <- pre_stats[ord]
-post_stats <- post_stats[ord]
-pre_ybl    <- pre_ybl[ord]
-post_ybl   <- post_ybl[ord]
-pre_lvq    <- pre_lvq[ord]
-post_lvq   <- post_lvq[ord]
-samples    <- samples[ord]
-                    
-knitr::opts_knit$set(
-  root.dir = rprojroot::find_rstudio_root_file()
-)
+samples    <- vapply(pre_stats, get_sample, FUN.VALUE = character(1))
 ```
 
-## Load Packages
-```{r load-packages}
+```{r library}
 library(htmltools)
 ```
 
-# Goals of file:
-
-1. Analizar la calidad pre y post QC con nanoplot.
-
-
-# Resultados pre_qc
-```{r NanoPlot-resultados-pre-qc}
+# QC Report- Nanopore Sequencing
+## Summary
+### This report shows QC metrics for r length(samples) sample(s): r paste(samples, collapse = ", ")
+```{r report, results='asis'}
+# Main rendering loop
 for (i in seq_along(samples)) {
   s <- samples[i]
-
-  # Título de muestra
-  cat("\n\n## Muestra: ", s, "\n\n")
-
-  # Resultados Pre-QC
-  cat("### Resultados Pre-QC\n")
-  cat("#### NanoStats (Pre):\n")
-  cat("```text\n")
-  cat(readLines(pre_stats[i]), sep = "\n")
-  cat("\n```\n")
-
-  cat("#### Yield by Length (Pre):\n")
-  cat(iframe_html(pre_ybl[i], height = 650), "\n\n")
-
-  cat("#### Length vs Quality (Pre):\n")
-  cat(iframe_html(pre_lvq[i], height = 650), "\n\n")
-
-  # Resultados Post-QC
-  cat("### Resultados Post-QC\n")
-  cat("#### NanoStats (Post):\n")
-  cat("```text\n")
-  cat(readLines(post_stats[i]), sep = "\n")
-  cat("\n```\n")
-
-  cat("#### Yield by Length (Post):\n")
-  cat(iframe_html(post_ybl[i], height = 650), "\n\n")
-
-  cat("#### Length vs Quality (Post):\n")
-  cat(iframe_html(post_lvq[i], height = 650), "\n\n")
-
-  cat("\n\n---\n")
+  
+  cat('\n\n## Sample:', s, '\n\n')
+  
+  # Pre-QC
+  cat('### Pre-Filtration QC\n\n')
+  
+  # Statistics
+  cat('#### Statistics\n')
+  cat('```text\n')
+  if (file.exists(pre_stats[i])) {
+    cat(readLines(pre_stats[i]), sep = "\n")
+  }
+  cat('\n```\n\n')
+  
+  # Get image paths
+  pre_ybl <- file.path(dirname(pre_stats[i]), "Yield_By_Length.png")
+  pre_lvq <- file.path(dirname(pre_stats[i]), "LengthvsQualityScatterPlot_dot.png")
+  
+  # Display images using img_tag() function
+  cat('#### Yield by Length\n')
+  cat(knitr::asis_output(img_tag(pre_ybl, paste("Pre-QC Yield by Length -", s))), '\n\n')
+  
+  cat('#### Length vs Quality\n')
+  cat(knitr::asis_output(img_tag(pre_lvq, paste("Pre-QC Length vs Quality -", s))), '\n\n')
+  
+  # Post-QC
+  cat('### Post-Filtration QC\n\n')
+  
+  # Statistics
+  cat('#### Statistics\n')
+  cat('```text\n')
+  if (file.exists(post_stats[i])) {
+    cat(readLines(post_stats[i]), sep = "\n")
+  }
+  cat('\n```\n\n')
+  
+  # Get post-QC image paths
+  post_ybl <- file.path(dirname(post_stats[i]), "Yield_By_Length.png")
+  post_lvq <- file.path(dirname(post_stats[i]), "LengthvsQualityScatterPlot_dot.png")
+  
+  cat('#### Yield by Length\n')
+  cat(knitr::asis_output(img_tag(post_ybl, paste("Post-QC Yield by Length -", s))), '\n\n')
+  
+  cat('#### Length vs Quality\n')
+  cat(knitr::asis_output(img_tag(post_lvq, paste("Post-QC Length vs Quality -", s))), '\n\n')
+  
+  cat('\n---\n')
 }
+
 ```
 
-### Resultados post_qc bla bla 
+# Method:
+
+## QC pipeline steps:
+    1. Pre-QC Analysis: Raw reads analyzed with NanoPlot
+    2. Read Filtering: Reads filtered with FiltLong (min length: 1000bp, min mean Q: 7)
+    3. Post-QC Analysis: Filtered reads analyzed with NanoPlot
+
+# Analysis:
+### bla bla bla 
