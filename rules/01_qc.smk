@@ -90,3 +90,15 @@ rule render_qc_report:
         '
         mv analysis/01_qc.html {HTML_DIR}/01_qc.html
         """
+  # ---------- REPORTE PDF ------------------------------------------------------------------------------
+rule html_to_pdf:
+    input:
+        html=HTML_DIR + "/01_qc.html"
+    output:
+        pdf=HTML_DIR + "/01_qc.pdf"
+    conda:
+        "../envs/01_qc.yml"
+    shell:
+        """
+        wkhtmltopdf {input.html} {output.pdf}
+        """
