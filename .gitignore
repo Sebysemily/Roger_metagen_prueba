@@ -8,4 +8,5 @@ data/***
 results/outputs/*
 results/outputs/**
 results/outputs/***
+results/result_docs/*.html
 .Rproj.user

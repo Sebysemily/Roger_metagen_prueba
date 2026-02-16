@@ -74,7 +74,7 @@ rule render_qc_report:
     output:
         html=HTML_DIR + "/01_qc.html"
     conda: 
-        "../envs/01_qc.yml"
+        "../envs/render.yml"
     shell:
        """
         mkdir -p {HTML_DIR}
@@ -97,8 +97,8 @@ rule html_to_pdf:
     output:
         pdf=HTML_DIR + "/01_qc.pdf"
     conda:
-        "../envs/01_qc.yml"
+        "../envs/render.yml"
     shell:
         """
-        wkhtmltopdf {input.html} {output.pdf}
+        weasyprint {input.html} {output.pdf}
         """

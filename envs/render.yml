@@ -1,0 +1,13 @@
+name: render_rmd_pdf
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - python=3.10
+    - conda-forge::r-base=4.3
+    - conda-forge::r-rmarkdown
+    - conda-forge::r-knitr
+    - conda-forge::pandoc
+    - r-pagedown
+    - weasyprint

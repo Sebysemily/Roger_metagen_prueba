@@ -7,8 +7,4 @@ dependencies:
     - python=3.10
     - nanoplot
     - filtlong
-    - conda-forge::r-base=4.3
-    - conda-forge::r-rmarkdown
-    - conda-forge::r-knitr
-    - conda-forge::pandoc
-    - wkhtmltopdf
+
