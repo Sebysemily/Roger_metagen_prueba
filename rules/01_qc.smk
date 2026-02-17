@@ -14,9 +14,6 @@ MIN_LEN = config["qc"]["min_length"]
 MIN_Q = config["qc"]["min_mean_q"]
 THREADS = config["qc"]["threads"]
 
-rule all: 
-    input:
-        HTML_DIR + "/01_qc.html"
 # -------------- QC PRE ------------------------------------------------------------------------------
 rule nanoplot_pre:
     input:
@@ -90,7 +87,7 @@ rule render_qc_report:
         '
         mv analysis/01_qc.html {HTML_DIR}/01_qc.html
         """
-  # ---------- REPORTE PDF ------------------------------------------------------------------------------
+# ---------- REPORTE PDF ------------------------------------------------------------------------------
 rule html_to_pdf:
     input:
         html=HTML_DIR + "/01_qc.html"

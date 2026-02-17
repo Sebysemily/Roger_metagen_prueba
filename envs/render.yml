@@ -4,10 +4,12 @@ channels:
     - bioconda
     - defaults
 dependencies:
-    - python=3.10
-    - conda-forge::r-base=4.3
-    - conda-forge::r-rmarkdown
-    - conda-forge::r-knitr
-    - conda-forge::pandoc
-    - r-pagedown
+    - r-base=4.2
+    - r-rmarkdown
+    - r-knitr
+    - r-ggplot2
+    - r-dplyr
+    - r-tidyr
+    - r-kableextra
     - weasyprint
+    - pandoc

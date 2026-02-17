@@ -1,9 +1,19 @@
-qc:
-  threads: 20
-  min_length: 1000
-  min_mean_q: 7
 paths:
   raw_dir: "data/raw_seq"
   filtered_dir: "data/filtered"
   qc_dir: "results/outputs/qc"
   html_dir: "results/results_docs"
+#mapping
+  ref_dir: "data/reference"
+  mapping_dir: "results/outputs/mapping"
+qc:
+  threads: 20
+  min_length: 1000
+  min_mean_q: 7
+mapping:
+  threads: 20
+  preset: "map-ont"
+  extra_options: "--secondary=no"
+  hosts:
+    - host1
+    - host2
