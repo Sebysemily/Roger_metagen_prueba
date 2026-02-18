@@ -1,9 +1,15 @@
 
 import pandas as pd
+import glob
+import os
 
 configfile: "config/config.yml"
 
-SAMPLES = pd.read_csv("config/samples.tsv", sep="\t")["sample"].tolist()
+samples_info = pd.read_csv("config/samples.tsv", sep="\t")
+
+SAMPLES = samples_info["sample"].tolist()
+BARCODES = samples_info["barcode"].tolist()
+sample_to_barcode = dict(zip(samples_info["sample"], samples_info["barcode"]))
 
 RAW_DIR = config["paths"]["raw_dir"] 
 FILT_DIR = config["paths"]["filtered_dir"]
@@ -13,7 +19,16 @@ HTML_DIR = config["paths"]["html_dir"]
 MIN_LEN = config["qc"]["min_length"]
 MIN_Q = config["qc"]["min_mean_q"]
 THREADS = config["qc"]["threads"]
-
+#--------------- CONC SAMPLES-----------------------------------------------
+rule concatenate_sample:
+    input:
+        lambda wildcards: sorted(glob.glob(os.path.join(RAW_DIR, sample_to_barcode[wildcards.sample], "*.fastq.gz")))
+    output:
+        combined = RAW_DIR + "/{sample}.fastq.gz"
+    shell:
+        """
+        zcat {input} | gzip > {output}
+        """
 # -------------- QC PRE ------------------------------------------------------------------------------
 rule nanoplot_pre:
     input:

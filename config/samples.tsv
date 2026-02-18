@@ -1,3 +1,4 @@
-sample	fastq
-prueba	data/raw_seq/prueba.fastq.gz
-prueba2	data/raw_seq/prueba2.fastq.gz
+sample	barcode	fastq
+T1	barcode04	data/raw_seq/barcode04/
+M1	barcode05	data/raw_seq/barcode05/
+A1	barcode06	data/raw_seq/barcode06/
