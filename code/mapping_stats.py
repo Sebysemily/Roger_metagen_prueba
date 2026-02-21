@@ -2,15 +2,14 @@ import pandas as pd
 import re
 import os
 
-# Los objetos input, output, etc. están disponibles en snakemake
-flagstats = snakemake.input.flagstats   # lista
-nanostats = snakemake.input.nanostats   # lista
+flagstats = snakemake.input.flagstats
+nanostats = snakemake.input.nanostats
 output_csv = snakemake.output.csv
 
-# Mismo código que antes, pero usando estas variables directamente
+# Diccionario sample -> total reads
 total_reads = {}
 for f in nanostats:
-    sample = os.path.basename(os.path.dirname(f))
+    sample = os.path.basename(os.path.dirname(f))  # asume .../post/{sample}/NanoStats.txt
     with open(f) as fp:
         for line in fp:
             if "Number of reads" in line:
@@ -21,11 +20,11 @@ for f in nanostats:
 data = []
 for f in flagstats:
     basename = os.path.basename(f).replace(".flagstat", "")
-    parts = basename.split("_")
-    sample = "_".join(parts[:-1])
-    host = parts[-1]
+    # Usar rsplit para separar sample y host por el último guión bajo
+    sample, host = basename.rsplit("_", 1)
     with open(f) as fp:
         first_line = fp.readline()
+        # Buscar el patrón: "1234 + 0 mapped (95.30%)"
         match = re.search(r"(\d+)\s+\+\s+\d+\s+mapped.*?\((\d+\.?\d*)%\)", first_line)
         if match:
             mapped = int(match.group(1))

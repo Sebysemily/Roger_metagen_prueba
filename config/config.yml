@@ -8,12 +8,11 @@ paths:
   mapping_dir: "results/outputs/mapping"
 qc:
   threads: 20
-  min_length: 1000
-  min_mean_q: 7
+  min_length: 500
+  min_mean_q: 12
 mapping:
   threads: 20
-  preset: "map-ont"
   extra_options: "--secondary=no"
   hosts:
-    - host1
-    - host2
+    - mutuki
+    - grandis

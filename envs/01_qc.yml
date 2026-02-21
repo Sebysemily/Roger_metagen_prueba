@@ -5,6 +5,7 @@ channels:
     - defaults
 dependencies:
     - python=3.10
-    - nanoplot
-    - filtlong
-
+    - nanoplot=1.46.2
+    - filtlong=0.3.1
+    - python-kaleido=1.2.0
+    - plotly=6.5.2 

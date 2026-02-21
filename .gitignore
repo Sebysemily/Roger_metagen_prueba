@@ -4,6 +4,8 @@ data/***
 .snakemake/*
 .snakemake/**
 .snakemake/**
+report.*
+report
 
 results/outputs/*
 results/outputs/**

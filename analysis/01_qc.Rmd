@@ -62,8 +62,7 @@ library(htmltools)
 ```
 
 # QC Report- Nanopore Sequencing
-## Summary
-### This report shows QC metrics for r length(samples) sample(s): r paste(samples, collapse = ", ")
+
 ```{r report, results='asis'}
 # Main rendering loop
 for (i in seq_along(samples)) {
@@ -123,8 +122,10 @@ for (i in seq_along(samples)) {
 
 ## QC pipeline steps:
     1. Pre-QC Analysis: Raw reads analyzed with NanoPlot
-    2. Read Filtering: Reads filtered with FiltLong (min length: 1000bp, min mean Q: 7)
+    2. Read Filtering: Reads filtered with FiltLong (min length: 500bp, min mean Q: 12)
     3. Post-QC Analysis: Filtered reads analyzed with NanoPlot
 
 # Analysis:
-### bla bla bla 
+### Explicacion tal vez del pq de los parametros 
+### y algun comentario adicional dependiendo que sea bueno comentar  por ejemplo 
+### algun outlier en las muestras, los largos cortos, etc x.x.

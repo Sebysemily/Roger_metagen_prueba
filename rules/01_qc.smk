@@ -24,15 +24,18 @@ rule concatenate_sample:
     input:
         lambda wildcards: sorted(glob.glob(os.path.join(RAW_DIR, sample_to_barcode[wildcards.sample], "*.fastq.gz")))
     output:
-        combined = RAW_DIR + "/{sample}.fastq.gz"
-    shell:
-        """
-        zcat {input} | gzip > {output}
-        """
+        combined = RAW_DIR + "/combined/{sample}.fastq.gz"
+    run:
+        import gzip
+        os.makedirs(os.path.dirname(output.combined), exist_ok=True)
+        with gzip.open(output.combined, 'wb') as out:
+            for f in input:
+                with gzip.open(f, 'rb') as inf:
+                    out.write(inf.read())
 # -------------- QC PRE ------------------------------------------------------------------------------
 rule nanoplot_pre:
     input:
-        fastq=RAW_DIR + "/{sample}.fastq.gz"
+        fastq=RAW_DIR + "/combined/{sample}.fastq.gz"
     output:
         pre_stats=QC_DIR + "/pre/{sample}/NanoStats.txt",
         pre_ybl=QC_DIR + "/pre/{sample}/Yield_By_Length.png",     
@@ -48,7 +51,7 @@ rule nanoplot_pre:
 # ------------ FILTRADO --------------------------------------------------------------------------
 rule fitlong:
     input:
-        fastq=RAW_DIR + "/{sample}.fastq.gz"
+        fastq=RAW_DIR + "/combined/{sample}.fastq.gz"
     output:
         fastq_filt=FILT_DIR + "/{sample}_post_qc.fastq.gz",
     conda: 

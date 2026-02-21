@@ -11,14 +11,13 @@ MAPPING_DIR = config["paths"]["mapping_dir"]
 QC_DIR= config["paths"]["qc_dir"]
 
 THREADS = config["mapping"]["threads"]
-PRESET = config["mapping"]["preset"]
 EXTRA = config["mapping"]["extra_options"]
 HOSTS = config["mapping"]["hosts"]
 
 #-----------Indexar genomas host------------------------------------------------
 rule index_host_genome:
     input: 
-        genome=REF_DIR +"/{host}.fa"
+        genome=REF_DIR +"/{host}.fna"
     output:
         index= REF_DIR +"/{host}.mmi"
     conda:
@@ -26,7 +25,7 @@ rule index_host_genome:
     threads: THREADS
     shell:
         """
-        minimap2 -x {PRESET} -d {output.index} {input.genome}
+        minimap2 -x mpa-ont -d {output.index} {input.genome}
         """
 #----------- Mappear a host ----------------------------------------------------
 rule map_sample_to_host:
@@ -40,7 +39,7 @@ rule map_sample_to_host:
     threads: THREADS
     shell:
         """
-        minimap2 -t {threads} -ax {PRESET} {EXTRA} {input.index} {input.reads} | \
+        minimap2 -t {threads} -ax map-ont {EXTRA} {input.index} {input.reads} | \
         samtools sort -@ {threads} -o {output.bam}
         samtools index {output.bam}
         """
