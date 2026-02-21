@@ -10,5 +10,5 @@ report
 results/outputs/*
 results/outputs/**
 results/outputs/***
-results/result_docs/*.html
+results/results_docs/*.html
 .Rproj.user
