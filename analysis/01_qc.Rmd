@@ -122,10 +122,13 @@ for (i in seq_along(samples)) {
 
 ## QC pipeline steps:
     1. Pre-QC Analysis: Raw reads analyzed with NanoPlot
-    2. Read Filtering: Reads filtered with FiltLong (min length: 500bp, min mean Q: 12)
+    2. Read Filtering: Reads filtered with FiltLong (min length: 900bp, min mean Q: 15)
     3. Post-QC Analysis: Filtered reads analyzed with NanoPlot
 
 # Analysis:
-### Explicacion tal vez del pq de los parametros 
-### y algun comentario adicional dependiendo que sea bueno comentar  por ejemplo 
-### algun outlier en las muestras, los largos cortos, etc x.x.
+Sorprendentemente el agua tuvo el mejor rendimiento, con mas Mb y la mejor calidad
+los parametros tal vez sean un poco muy restrictivos para T1 a pesar de que creo que son ideales
+para el resto de las muestras. A pesar de lo que pensabamos T1 tuvo el peor rendimiento, tal vez el tejido de 
+coral tiene muchos inhibidores que impidieron el secuenciamiento ademas que muchos
+hay muchos fragmentos pequeños de ~500 pb, pero antes de normalizar T1 fue la 
+muestra con mas ng/uL de las presentadas, voy a continuar asi a ver que tal. 

@@ -6,13 +6,15 @@ paths:
 #mapping
   ref_dir: "data/reference"
   mapping_dir: "results/outputs/mapping"
+  dehosted_dir: "data/dehosted"
 qc:
   threads: 20
-  min_length: 500
-  min_mean_q: 12
+  min_length: 900
+  min_mean_q: 15
 mapping:
   threads: 20
   extra_options: "--secondary=no"
   hosts:
     - mutuki
     - grandis
+    - human

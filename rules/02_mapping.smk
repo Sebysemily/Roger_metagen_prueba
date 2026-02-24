@@ -9,6 +9,7 @@ HTML_DIR = config["paths"]["html_dir"]
 REF_DIR = config["paths"]["ref_dir"]
 MAPPING_DIR = config["paths"]["mapping_dir"]
 QC_DIR= config["paths"]["qc_dir"]
+DEHOSTED_DIR= config["pahts"]["dehosted_dir"]
 
 THREADS = config["mapping"]["threads"]
 EXTRA = config["mapping"]["extra_options"]
@@ -63,3 +64,44 @@ rule mapping_stats:
         csv=MAPPING_DIR + "/stats_csv/mapping_stats.csv"
     script:
         "code/gather_mapping_stats.py"
+#------Extraer secuencias mappeadas---------------------------------------------
+rule extract_mapped_ids:
+    input:
+        bam=MAPPING_DIR + "/bam/{sample}_{host}.bam"
+    output:
+        ids=MAPPING_DIR + "/mapped_ids/{sample}_{host}.txt"
+    conda:
+        "../envs/02_mapping.yml"
+    shell:
+        """
+        samtools view -F 4 {input.bam} | cut -f1 | sort -u > {output.ids}
+        """
+#------------Unir seq mapeadas--------------------------------------------------
+rule union_mapped_ids:
+    input:
+        ids=expand(MAPPING_DIR + "/mapped_ids/{{sample}}_{host}.txt",
+                   host=HOSTS)
+    output:
+        blacklist=MAPPING_DIR + "/mapped_ids/{sample}_all_hosts.txt"
+    run:
+        all_ids = set()
+        for f in input.ids:
+            with open(f) as fp:
+                all_ids.update(line.strip() for line in fp)
+        with open(output.blacklist, "w") as out:
+            for rid in sorted(all_ids):
+                out.write(rid + "\n")
+#--------- quitar host----------------------------------------------------------
+rule dehost_fastq:
+    input:
+        fastq=FILT_DIR + "/{sample}_post_qc.fastq.gz",
+        blacklist=MAPPING_DIR + "/mapped_ids/{sample}_all_hosts.txt"
+    output:
+        clean=DEHOSTED_DIR + "/{sample}_dehosted.fastq.gz"
+    conda:
+        "../envs/seqkit.yml"   
+    shell:
+        """
+        seqkit grep -v -f {input.blacklist} {input.fastq} | gzip > {output.clean}
+        """
+
