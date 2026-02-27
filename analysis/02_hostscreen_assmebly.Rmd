@@ -1,0 +1,254 @@
+---
+title: "02_mapping host removal"
+author: "Roger Calvas"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+editor_options: 
+  chunk_output_type: console
+params:
+  stats_csv: ""
+  overlaps_csv: ""
+  dehosted_stats: ""
+  samples: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Funciones auxiliares (adaptadas de 01_qc.Rmd)
+split_paths <- function(x) {
+  x <- trimws(x)
+  if (is.null(x) || is.na(x) || x == "") return(character(0))
+  strsplit(x, " +")[[1]]
+}
+
+get_sample_from_path <- function(path) {
+  parts <- strsplit(path, .Platform$file.sep)[[1]]
+  # Asume estructura .../post/{sample}/NanoStats.txt o similar
+  # Para dehosted_stats, podría ser .../mapping/nanostats_dehosted/{sample}/NanoStats.txt
+  # Buscamos el directorio que contiene el archivo
+  dirname(parts[length(parts)-1])
+}
+
+img_tag <- function(filepath, alt_text = "QC Plot", width = "100%") {
+  if (is.na(filepath) || !file.exists(filepath)) {
+    return(sprintf('<p style="color: gray;">%s not available</p>', alt_text))
+  }
+  # Ajustar ruta relativa desde results_docs a results/outputs/...
+  if (grepl("^results/", filepath)) {
+    rel_part <- sub("^results/", "", filepath)
+    rel_path <- paste0("../", rel_part)
+  } else {
+    rel_path <- filepath
+  }
+  sprintf('<img src="%s" alt="%s" style="width: %s; max-width: 800px; border: 1px solid #ddd;">',
+          rel_path, alt_text, width)
+}
+
+# Cargar librerías necesarias
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(htmltools)
+
+# Leer parámetros
+mapping_file <- params$mapping_stats
+overlaps_file <- params$overlaps_csv
+dehosted_stats_raw <- params$dehosted_stats
+samples_param <- params$samples
+
+# Verificar que mapping_stats se haya proporcionado
+if (nchar(mapping_file) == 0) {
+  stop("El parámetro 'mapping_stats' es obligatorio y no fue proporcionado.")
+}
+if (!file.exists(mapping_file)) {
+  stop("El archivo mapping_stats no existe: ", mapping_file)
+}
+
+# Leer datos de mapeo
+df_mapping <- read_csv(mapping_file, show_col_types = FALSE)
+
+# Determinar lista de muestras
+if (nchar(samples_param) > 0) {
+  samples <- split_paths(samples_param)
+} else {
+  samples <- unique(df_mapping$sample)
+}
+
+# Leer datos de solapamiento (si existe y se proporcionó)
+if (nchar(overlaps_file) > 0 && file.exists(overlaps_file)) {
+  df_overlaps <- read_csv(overlaps_file, show_col_types = FALSE) %>%
+    filter(sample %in% samples)
+} else {
+  df_overlaps <- NULL
+}
+
+# Procesar archivos dehosted stats (opcional)
+dehosted_stats <- split_paths(dehosted_stats_raw)
+if (length(dehosted_stats) > 0) {
+  # Crear un data frame con sample y ruta
+  df_dehosted <- tibble(
+    path = dehosted_stats,
+    sample = map_chr(dehosted_stats, ~ {
+      parts <- strsplit(.x, .Platform$file.sep)[[1]]
+      # Asumimos que el sample es el directorio padre del archivo
+      parts[length(parts)-1]
+    })
+  ) %>% filter(sample %in% samples)
+} else {
+  df_dehosted <- NULL
+}
+
+# Función para formatear números
+fmt_num <- function(x) format(x, big.mark = ",", scientific = FALSE)
+fmt_pct <- function(x) sprintf("%.2f%%", x)
+```
+```{r report-of-mapped-vs-host}
+for (s in samples) {
+  cat('\n\n## Muestra:', s, '\n\n')
+  
+  # ---- Tabla de mapeo por hospedero ----
+  cat('### Reads mapeadas por hospedero\n\n')
+  
+  stats_s <- df_mapping %>%
+    filter(sample == s) %>%
+    select(host, mapped_reads, total_reads, pct_flagstat, pct_real) %>%
+    mutate(
+      mapped_reads = fmt_num(mapped_reads),
+      total_reads = fmt_num(total_reads),
+      pct_flagstat = fmt_pct(pct_flagstat),
+      pct_real = fmt_pct(pct_real)
+    )
+  
+  print(
+    stats_s %>%
+      kable(format = "html", caption = paste("Resultados de mapeo para", s)) %>%
+      kable_styling(bootstrap_options = c("striped", "hover")) %>%
+      column_spec(1, bold = TRUE)
+  )
+  
+  # ---- Tabla de solapamiento (si existe) ----
+  if (!is.null(df_overlaps) && s %in% df_overlaps$sample) {
+    cat('\n### Solapamiento entre hospederos\n\n')
+    
+    overlap_s <- df_overlaps %>%
+      filter(sample == s) %>%
+      select(-sample) %>%
+      pivot_longer(everything(), names_to = "categoría", values_to = "reads") %>%
+      mutate(reads = fmt_num(reads))
+    
+    print(
+      overlap_s %>%
+        kable(format = "html", caption = "Reads únicas por hospedero y totales") %>%
+        kable_styling(bootstrap_options = c("striped", "hover"))
+    )
+    
+    # Extraer total de reads mapeadas a cualquier hospedero
+    total_any <- df_overlaps %>% filter(sample == s) %>% pull(total_mapped_any_host)
+    total_reads_sample <- df_mapping %>% filter(sample == s) %>% pull(total_reads) %>% first()
+    
+    kept <- total_reads_sample - total_any
+    pct_removed <- total_any / total_reads_sample * 100
+    pct_kept <- 100 - pct_removed
+    
+    cat('\n**Resumen de eliminación:**  \n')
+    cat('- Reads totales (post‑QC): ', fmt_num(total_reads_sample), '\n')
+    cat('- Reads que mapearon a algún hospedero: ', fmt_num(total_any), '\n')
+    cat('- Reads retenidas (microbioma): ', fmt_num(kept), '\n')
+    cat('- Porcentaje eliminado: ', fmt_pct(pct_removed), '\n')
+    cat('- Porcentaje retenido: ', fmt_pct(pct_kept), '\n')
+  }
+  
+  # ---- QC de lecturas dehosted (opcional) ----
+  if (!is.null(df_dehosted) && s %in% df_dehosted$sample) {
+    cat('\n### Control de calidad post‑dehosting\n\n')
+    
+    nano_path <- df_dehosted %>% filter(sample == s) %>% pull(path)
+    
+    # Mostrar estadísticas de NanoStats
+    cat('#### Estadísticas\n')
+    cat('```text\n')
+    if (file.exists(nano_path)) {
+      cat(readLines(nano_path), sep = "\n")
+    } else {
+      cat('Archivo no encontrado')
+    }
+    cat('\n```\n\n')
+    
+    # Mostrar gráficas si existen (misma lógica que en 01_qc)
+    nano_dir <- dirname(nano_path)
+    ybl <- file.path(nano_dir, "Yield_By_Length.png")
+    lvq <- file.path(nano_dir, "LengthvsQualityScatterPlot_dot.png")
+    
+    cat('#### Yield by Length (post‑dehosting)\n')
+    cat(knitr::asis_output(img_tag(ybl, paste("Yield by Length -", s))), '\n\n')
+    
+    cat('#### Length vs Quality (post‑dehosting)\n')
+    cat(knitr::asis_output(img_tag(lvq, paste("Length vs Quality -", s))), '\n\n')
+  }
+  
+  cat('\n---\n')
+}
+```
+```{r %-mapped-vs-host}
+# Gráfico de porcentaje de mapeo por hospedero (todas las muestras)
+df_mapping %>%
+  ggplot(aes(x = sample, y = pct_real, fill = host)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Porcentaje de reads mapeadas por hospedero",
+    x = "Muestra",
+    y = "% del total de reads",
+    fill = "Hospedero"
+  ) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r resumen-de-eliminacion}
+if (!is.null(df_overlaps)) {
+  df_summary <- df_overlaps %>%
+    select(sample, total_mapped_any_host) %>%
+    left_join(
+      df_mapping %>% group_by(sample) %>% summarise(total_reads = first(total_reads)),
+      by = "sample"
+    ) %>%
+    mutate(
+      kept_reads = total_reads - total_mapped_any_host,
+      pct_removed = total_mapped_any_host / total_reads * 100,
+      pct_kept = 100 - pct_removed
+    )
+  
+  df_summary %>%
+    mutate(
+      total_reads = fmt_num(total_reads),
+      total_mapped_any_host = fmt_num(total_mapped_any_host),
+      kept_reads = fmt_num(kept_reads),
+      pct_removed = fmt_pct(pct_removed),
+      pct_kept = fmt_pct(pct_kept)
+    ) %>%
+    select(sample, total_reads, total_mapped_any_host, kept_reads, pct_removed, pct_kept) %>%
+    kable(format = "html", caption = "Reads eliminadas por muestra") %>%
+    kable_styling(bootstrap_options = c("striped", "hover")) %>%
+    column_spec(1, bold = TRUE)
+}
+```
+
+#Method:
+Las lecturas filtradas (post‑QC) se mapearon contra los genomas de los hospederos (mutuki, grandis, humano) usando minimap2 con opciones -ax map-ont. Se consideraron como contaminación todas las lecturas que mapearon a cualquier hospedero (flag -F 4 en samtools). Los IDs de esas lecturas se extrajeron y se combinaron en una lista negra por muestra. Posteriormente, se filtró el archivo FASTQ original con seqkit grep -v para obtener las lecturas libres de hospedero, listas para análisis del microbioma.
+
+Las tablas muestran:
+
+    mapped_reads: número de lecturas que mapearon a cada hospedero (según flagstat).
+
+    pct_flagstat: porcentaje reportado por flagstat (sobre el total de lecturas en el BAM).
+
+    pct_real: porcentaje real sobre el total de lecturas de la muestra (post‑QC).
+
+    En la sección de solapamiento, se detallan las lecturas únicas de cada hospedero (que no mapean a ningún otro) y el total de lecturas que mapearon al menos a un hospedero.
+    
+#Analysis:
+
+    
