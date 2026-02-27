@@ -1,0 +1,156 @@
+---
+title: "02_mapping"
+author: "Roger Calvas"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+editor_options: 
+  chunk_output_type: console
+params:
+  mapping_stats: ""
+  samples: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+
+split_paths <- function(x) {
+  x <- trimws(x)
+  if (is.null(x) || is.na(x) || x == "") return(character(0))
+  strsplit(x, " +")[[1]]
+}
+
+fmt_num <- function(x) format(x, big.mark = ",", scientific = FALSE)
+fmt_pct <- function(x) sprintf("%.2f%%", x)
+
+mapping_file <- params$mapping_stats
+samples_param <- params$samples
+
+if (nchar(mapping_file) == 0) stop("El parámetro 'mapping_stats' es obligatorio y no fue proporcionado.")
+if (!file.exists(mapping_file)) stop("El archivo mapping_stats no existe: ", mapping_file)
+
+df_mapping <- read_csv(mapping_file, show_col_types = FALSE)
+
+# Lista de muestras (opcional)
+if (nchar(samples_param) > 0) {
+  samples <- split_paths(samples_param)
+  df_mapping <- df_mapping %>% filter(sample %in% samples)
+} else {
+  samples <- unique(df_mapping$sample)
+}
+
+# Asegurar tipos numéricos (por si algo se leyó como texto)
+num_cols <- intersect(c("mapped_reads","total_reads","pct_flagstat","pct_real"), names(df_mapping))
+df_mapping <- df_mapping %>% mutate(across(all_of(num_cols), as.numeric))
+
+# Resumen por muestra (solo con mapping_stats)
+# OJO: any-host NO se puede saber exacto sin overlaps:
+# - lower bound: max(mapped_reads)
+# - upper bound: sum(mapped_reads)
+df_bounds <- df_mapping %>%
+  group_by(sample) %>%
+  summarise(
+    total_reads = first(total_reads),
+    any_host_reads_lower = max(mapped_reads, na.rm = TRUE),
+    any_host_reads_upper = sum(mapped_reads, na.rm = TRUE),
+    any_host_pct_lower = 100 * any_host_reads_lower / total_reads,
+    any_host_pct_upper = 100 * any_host_reads_upper / total_reads,
+    .groups = "drop"
+  )
+
+# Host dominante por muestra
+df_dominant <- df_mapping %>%
+  group_by(sample) %>%
+  slice_max(order_by = pct_real, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(sample, dominant_host = host, dominant_pct = pct_real)
+```
+
+```{r overview}
+df_summary <- df_bounds %>%
+  left_join(df_dominant, by = "sample") %>%
+  mutate(
+    total_reads = fmt_num(total_reads),
+    any_host_reads_lower = fmt_num(any_host_reads_lower),
+    any_host_reads_upper = fmt_num(any_host_reads_upper),
+    any_host_pct_lower = fmt_pct(any_host_pct_lower),
+    any_host_pct_upper = fmt_pct(any_host_pct_upper),
+    dominant_pct = fmt_pct(dominant_pct)
+  ) %>%
+  select(
+    sample, total_reads,
+    dominant_host, dominant_pct,
+    any_host_reads_lower, any_host_pct_lower,
+    any_host_reads_upper, any_host_pct_upper
+  )
+
+df_summary %>%
+  kable(format = "html", caption = "Resumen por muestra (host dominante y rango de mapeo a cualquier host)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  column_spec(1, bold = TRUE)
+```
+
+
+
+```{r Porcentaje-mapeo-host}
+df_mapping %>%
+  ggplot(aes(x = sample, y = pct_real, fill = host)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Porcentaje de reads mapeadas por hospedero (sobre total post-QC)",
+    x = "Muestra",
+    y = "% del total de reads",
+    fill = "Hospedero"
+  ) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+```{r detalle-por-muestra}
+for (s in samples) {
+  cat('\n\n### Muestra:', s, '\n\n')
+
+  stats_s <- df_mapping %>%
+    filter(sample == s) %>%
+    select(host, mapped_reads, total_reads, pct_flagstat, pct_real) %>%
+    mutate(
+      mapped_reads = fmt_num(mapped_reads),
+      total_reads = fmt_num(total_reads),
+      pct_flagstat = fmt_pct(pct_flagstat),
+      pct_real = fmt_pct(pct_real)
+    )
+
+  print(
+    stats_s %>%
+      kable(format = "html", caption = paste("Resultados de mapeo para", s)) %>%
+      kable_styling(bootstrap_options = c("striped", "hover")) %>%
+      column_spec(1, bold = TRUE)
+  )
+
+  # Rango de any-host para esta muestra
+  b <- df_bounds %>% filter(sample == s) %>% slice(1)
+
+  cat("\n**Rango estimado de mapeo a cualquier host (sin overlaps):**  \n")
+  cat("- Lower bound (max host): ", fmt_num(b$any_host_reads_lower), " (", fmt_pct(b$any_host_pct_lower), ")\n", sep="")
+  cat("- Upper bound (suma hosts): ", fmt_num(b$any_host_reads_upper), " (", fmt_pct(b$any_host_pct_upper), ")\n", sep="")
+  cat("\n---\n")
+}
+```
+
+#Method:
+Las lecturas filtradas (post‑QC) se mapearon contra los genomas de los hospederos (mutuki, grandis, humano) usando minimap2 con opciones -ax map-ont. Se consideraron como contaminación todas las lecturas que mapearon a cualquier hospedero (flag -F 4 en samtools). Los IDs de esas lecturas se extrajeron y se combinaron en una lista negra por muestra. Posteriormente, se filtró el archivo FASTQ original con seqkit grep -v para obtener las lecturas libres de hospedero, listas para análisis del microbioma.
+
+
+    
+#Analysis:
+
+    

@@ -9,7 +9,7 @@ HTML_DIR = config["paths"]["html_dir"]
 REF_DIR = config["paths"]["ref_dir"]
 MAPPING_DIR = config["paths"]["mapping_dir"]
 QC_DIR= config["paths"]["qc_dir"]
-DEHOSTED_DIR= config["pahts"]["dehosted_dir"]
+DEHOSTED_DIR= config["paths"]["dehosted_dir"]
 
 THREADS = config["mapping"]["threads"]
 EXTRA = config["mapping"]["extra_options"]
@@ -22,11 +22,11 @@ rule index_host_genome:
     output:
         index= REF_DIR +"/{host}.mmi"
     conda:
-        "../envs/mapping.yml"
+        "../envs/02_mapping.yml"
     threads: THREADS
     shell:
         """
-        minimap2 -x mpa-ont -d {output.index} {input.genome}
+        minimap2 -x map-ont -d {output.index} {input.genome}
         """
 #----------- Mappear a host ----------------------------------------------------
 rule map_sample_to_host:
@@ -63,7 +63,7 @@ rule mapping_stats:
     output:
         csv=MAPPING_DIR + "/stats_csv/mapping_stats.csv"
     script:
-        "code/gather_mapping_stats.py"
+        "code/mapping_stats.py"
 #------Extraer secuencias mappeadas---------------------------------------------
 rule extract_mapped_ids:
     input:
@@ -99,9 +99,31 @@ rule dehost_fastq:
     output:
         clean=DEHOSTED_DIR + "/{sample}_dehosted.fastq.gz"
     conda:
-        "../envs/seqkit.yml"   
+        "../envs/02_mapping.yml"   
     shell:
         """
         seqkit grep -v -f {input.blacklist} {input.fastq} | gzip > {output.clean}
         """
-
+#------- render HTML -----------------------------------------------------------
+rule render_mapping_report:
+    input:
+        mapping_stats=MAPPING_DIR + "/stats_csv/mapping_stats.csv"
+        
+    output:
+        html=HTML_DIR + "/02_mapping.html"
+    conda:
+        "../envs/render.yml"
+    shell:
+        """
+        mkdir -p {HTML_DIR}
+        Rscript --vanilla -e '
+        rmarkdown::render(
+          "analysis/02_mapping.Rmd",
+          params = list(
+            mapping_stats = "{input.mapping_stats}"
+          ),
+          knit_root_dir = getwd()
+        )
+        '
+        mv analysis/02_mapping.html {HTML_DIR}/02_mapping.html
+        """
