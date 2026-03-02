@@ -3,18 +3,57 @@ paths:
   filtered_dir: "data/filtered"
   qc_dir: "results/outputs/qc"
   html_dir: "results/results_docs"
-#mapping
+
+  # mapping
   ref_dir: "data/reference"
   mapping_dir: "results/outputs/mapping"
-  dehosted_dir: "data/dehosted"
+  dehosted_dir: "results/outputs/dehosted"
+
+  # blast
+  blast_dir: "results/outputs/blast"
+
 qc:
   threads: 20
   min_length: 900
   min_mean_q: 15
+
 mapping:
   threads: 20
+  mapq_min: 35
   extra_options: "--secondary=no"
   hosts:
     - mutuki
     - grandis
-    
+    - human
+
+blast:
+  # ---------------------------
+  # remoto nt (dehosted)
+  # ---------------------------
+  remote_db: "nt"
+  remote_task: "megablast"
+  remote_evalue: "1e-10"
+  remote_max_target_seqs: 10
+
+  # controla cuánto mandas a NCBI
+  remote_max_reads: 200        # subsample de reads (por sample)
+  remote_chunk_size: 20        # cuántas secuencias por request
+
+  # control de rate-limit / robustez
+  remote_include_scinames: false   # true => pide sscinames (requiere taxdb local para evitar warning)
+  remote_sleep_s: 8               # pausa base entre requests
+  remote_jitter_s: 5              # jitter aleatorio
+  remote_retries: 8               # reintentos por chunk
+  remote_backoff_factor: 1.8      # backoff exponencial
+  remote_fail_soft: true          # si un chunk falla tras reintentos => lo deja vacío y sigue
+  remote_resume: true             # si ya existe *.nt.tsv (y no está vacío), lo reutiliza
+
+  # TIP: para que Snakemake no lance 3 muestras a la vez contra NCBI,
+  # ejecuta con:  snakemake ... --resources ncbi_remote=1
+  # (el rule usa resources: ncbi_remote=1)
+  # ---------------------------
+  # local hosts (removed)
+  # ---------------------------
+  local_task: "megablast"
+  local_evalue: "1e-20"
+  local_max_target_seqs: 25

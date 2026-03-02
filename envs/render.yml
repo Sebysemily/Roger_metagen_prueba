@@ -14,3 +14,4 @@ dependencies:
     - python=3.14.0
     - pandoc=3.9
     - r-kableextra
+    - r-tidyverse

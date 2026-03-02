@@ -1,0 +1,10 @@
+name: blast
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - blast>=2.14
+  - seqkit>=2.5
+  - pandas
+  - biopython>=1.81
